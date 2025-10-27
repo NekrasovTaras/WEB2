@@ -37,6 +37,12 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   container.appendChild(filterSelect);
 
+  const searchInput = document.createElement("input");
+  searchInput.type = "text";
+  searchInput.placeholder = "Поиск по названию...";
+  searchInput.className = "search";
+  container.appendChild(searchInput);
+
   const list = document.createElement("div");
   list.className = "todo-list";
   container.appendChild(list);
@@ -94,6 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderTasks() {
     list.textContent = "";
+    const searchValue = searchInput.value.toLowerCase();
     const filterValue = filterSelect.value;
 
     tasks
@@ -102,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (filterValue === "Невыполненные") return !task.done;
         return true;
       })
+      .filter(task => task.text.toLowerCase().includes(searchValue))
       .forEach(task => list.appendChild(createTaskElement(task)));
   }
 
@@ -125,6 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   filterSelect.addEventListener("change", renderTasks);
+  searchInput.addEventListener("input", renderTasks);
 
   renderTasks();
 });
