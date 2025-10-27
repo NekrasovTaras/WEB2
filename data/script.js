@@ -19,11 +19,23 @@ document.addEventListener("DOMContentLoaded", () => {
   inputText.placeholder = "Введите задачу...";
   inputText.required = true;
 
+  const inputDate = document.createElement("input");
+  inputDate.type = "date";
+
   const addBtn = document.createElement("button");
   addBtn.textContent = "Добавить";
 
-  form.append(inputText, addBtn);
+  form.append(inputText, inputDate, addBtn);
   container.appendChild(form);
+
+  const filterSelect = document.createElement("select");
+  ["Все", "Выполненные", "Невыполненные"].forEach(optText => {
+    const option = document.createElement("option");
+    option.value = optText;
+    option.textContent = optText;
+    filterSelect.appendChild(option);
+  });
+  container.appendChild(filterSelect);
 
   const list = document.createElement("div");
   list.className = "todo-list";
@@ -42,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const span = document.createElement("span");
     span.className = "todo-text";
-    span.textContent = task.text;
+    span.textContent = `${task.text} (${task.date || "без даты"})`;
 
     const controls = document.createElement("div");
     controls.className = "controls";
@@ -55,6 +67,17 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
     });
 
+    const editBtn = document.createElement("button");
+    editBtn.textContent = "✎";
+    editBtn.addEventListener("click", () => {
+      const newText = prompt("Изменить задачу:", task.text);
+      const newDate = prompt("Введите новую дату:", task.date);
+      if (newText !== null) task.text = newText;
+      if (newDate !== null) task.date = newDate;
+      saveTasks();
+      renderTasks();
+    });
+
     const deleteBtn = document.createElement("button");
     deleteBtn.textContent = "🗑";
     deleteBtn.addEventListener("click", () => {
@@ -63,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderTasks();
     });
 
-    controls.append(doneBtn, deleteBtn);
+    controls.append(doneBtn, editBtn, deleteBtn);
     div.append(span, controls);
 
     return div;
@@ -71,24 +94,37 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderTasks() {
     list.textContent = "";
-    tasks.forEach(task => list.appendChild(createTaskElement(task)));
+    const filterValue = filterSelect.value;
+
+    tasks
+      .filter(task => {
+        if (filterValue === "Выполненные") return task.done;
+        if (filterValue === "Невыполненные") return !task.done;
+        return true;
+      })
+      .forEach(task => list.appendChild(createTaskElement(task)));
   }
 
   form.addEventListener("submit", e => {
     e.preventDefault();
     const text = inputText.value.trim();
+    const date = inputDate.value;
     if (!text) return;
 
     tasks.push({
       id: Date.now(),
       text,
+      date,
       done: false
     });
 
     inputText.value = "";
+    inputDate.value = "";
     saveTasks();
     renderTasks();
   });
+
+  filterSelect.addEventListener("change", renderTasks);
 
   renderTasks();
 });

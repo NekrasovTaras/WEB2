@@ -37,6 +37,23 @@ input[type="text"] {
   background-color: #ecfdf5;
 }
 
+input[type="date"] {
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 2px solid #a7f3d0;
+  background-color: #ecfdf5;
+  color: #064e3b;
+}
+
+select {
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 2px solid #a7f3d0;
+  background-color: #ecfdf5;
+  color: #064e3b;
+  margin-bottom: 15px;
+}
+
 button {
   padding: 10px 16px;
   border: none;
@@ -61,6 +78,10 @@ button {
   background: #d1fae5;
   opacity: 0.7;
   text-decoration: line-through;
+}
+
+.todo-text {
+  font-size: 16px;
 }
 
 .controls button {
