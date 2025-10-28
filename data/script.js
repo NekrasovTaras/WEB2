@@ -6,14 +6,24 @@ document.addEventListener("DOMContentLoaded", () => {
   app.appendChild(title);
 
   const subtitle = document.createElement("p");
-  subtitle.textContent = "Не забывай поливать цветочки";
+  subtitle.innerHTML = 'Не забывай поливать <span class="flowers">цветочки</span>';
   app.appendChild(subtitle);
+
+  const flowersText = subtitle.querySelector(".flowers");
+  const letters = flowersText.textContent.split("");
+  flowersText.textContent = "";
+  letters.forEach(ch => {
+    const span = document.createElement("span");
+    span.textContent = ch;
+    flowersText.appendChild(span);
+  });
 
   const container = document.createElement("div");
   container.className = "todo-container";
   app.appendChild(container);
 
   const form = document.createElement("form");
+
   const inputText = document.createElement("input");
   inputText.type = "text";
   inputText.placeholder = "Введите задачу...";
@@ -40,12 +50,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const searchInput = document.createElement("input");
   searchInput.type = "text";
   searchInput.placeholder = "Поиск по названию...";
-  searchInput.className = "search";
   container.appendChild(searchInput);
+
+  const sortBtn = document.createElement("button");
+  sortBtn.textContent = "Сортировать по дате";
+  container.appendChild(sortBtn);
 
   const list = document.createElement("div");
   list.className = "todo-list";
   container.appendChild(list);
+
+  const calendarContainer = document.createElement("div");
+  calendarContainer.className = "calendar";
+  container.appendChild(calendarContainer);
 
   let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
 
@@ -53,10 +70,64 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }
 
+  function renderCalendar() {
+  calendarContainer.textContent = "";
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const header = document.createElement("h2");
+  header.textContent = now.toLocaleString("ru", { month: "long", year: "numeric" });
+  calendarContainer.appendChild(header);
+
+  const grid = document.createElement("div");
+  grid.className = "calendar-grid";
+  calendarContainer.appendChild(grid);
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const cell = document.createElement("div");
+    cell.className = "calendar-day";
+
+    const label = document.createElement("div");
+    label.className = "day-number";
+    label.textContent = day;
+    cell.appendChild(label);
+
+    const dayTasks = tasks.filter(t => {
+      if (!t.date) return false;
+      const tDate = new Date(t.date);
+      return (
+        tDate.getFullYear() === year &&
+        tDate.getMonth() === month &&
+        tDate.getDate() === day
+      );
+    });
+
+    if (dayTasks.length > 0) {
+      const list = document.createElement("ul");
+      list.className = "calendar-task-list";
+
+      dayTasks.forEach(t => {
+        const item = document.createElement("li");
+        item.textContent = t.text;
+        if (t.done) item.classList.add("done");
+        list.appendChild(item);
+      });
+
+      cell.appendChild(list);
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
   function createTaskElement(task) {
-    const div = document.createElement("div");
-    div.className = "todo-item";
-    if (task.done) div.classList.add("done");
+    const li = document.createElement("div");
+    li.className = "todo-item";
+    if (task.done) li.classList.add("done");
+    li.draggable = true;
 
     const span = document.createElement("span");
     span.className = "todo-text";
@@ -93,9 +164,25 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     controls.append(doneBtn, editBtn, deleteBtn);
-    div.append(span, controls);
+    li.append(span, controls);
 
-    return div;
+    li.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", task.id);
+    });
+
+    li.addEventListener("dragover", e => e.preventDefault());
+
+    li.addEventListener("drop", e => {
+      const draggedId = e.dataTransfer.getData("text/plain");
+      const fromIndex = tasks.findIndex(t => t.id == draggedId);
+      const toIndex = tasks.findIndex(t => t.id == task.id);
+      const [moved] = tasks.splice(fromIndex, 1);
+      tasks.splice(toIndex, 0, moved);
+      saveTasks();
+      renderTasks();
+    });
+
+    return li;
   }
 
   function renderTasks() {
@@ -111,6 +198,8 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .filter(task => task.text.toLowerCase().includes(searchValue))
       .forEach(task => list.appendChild(createTaskElement(task)));
+
+    renderCalendar();
   }
 
   form.addEventListener("submit", e => {
@@ -128,6 +217,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     inputText.value = "";
     inputDate.value = "";
+    saveTasks();
+    renderTasks();
+  });
+
+  sortBtn.addEventListener("click", e => {
+    e.preventDefault();
+    tasks.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
     saveTasks();
     renderTasks();
   });
